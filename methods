@@ -1,0 +1,169 @@
+from datetime import datetime
+
+
+def reg_user(username_password):
+    while True:
+        # Request input of a new username
+        new_username = input("New Username: ")
+
+        # Here I check if the username already exists
+        if new_username in username_password:
+            print("Username already exists. Please pick a different username.")
+        else:
+            # If the username is unique, break out of the loop and continue
+            break
+
+    # - Request input of a new password
+    new_password = input("New Password: ")
+
+    # - Request input of password confirmation.
+    confirm_password = input("Confirm Password: ")
+
+    # - Check if the new password and confirmed password are the same.
+    if new_password == confirm_password:
+        # - If they are the same, add them to the user.txt file,
+        print("New user added to user.txt")
+        username_password[new_username] = new_password
+
+        with open("user.txt", "w") as out_file:
+            user_data = []
+            for k in username_password:
+                user_data.append(f"{k};{username_password[k]}")
+            out_file.write("\n".join(user_data))
+
+    # - If the above passwords don't match, let the user know.
+    else:
+        print("Passwords do no match")
+    return new_username, new_password
+
+
+# -------------------------------------------------------------------#
+
+def add_task(task_list, datetime_string_format, new_task):
+    task_list.append(new_task)
+    with open("tasks.txt", "w") as task_file:
+        task_list_to_write = []
+        for t in task_list:
+            str_attrs = [
+                t['username'],
+                t['title'],
+                t['description'],
+                t['due_date'].strftime(datetime_string_format),
+                t['assigned_date'].strftime(datetime_string_format),
+                "Yes" if t['completed'] else "No"
+            ]
+            task_list_to_write.append(";".join(str_attrs))
+        task_file.write("\n".join(task_list_to_write))
+    print("Task successfully added.")
+
+
+# -------------------------------------------------------------------#
+
+def view_all(task_list, datetime_string_format):
+    for t in task_list:
+        print("""-----------------------------------------------------------------------------------\n""")
+        disp_str = f"Task: \t\t\t\t\t {t['title']}\n"
+        disp_str += f"Assigned to: \t\t\t {t['username']}\n"
+        disp_str += f"Date Assigned: \t\t\t {t['assigned_date'].strftime(datetime_string_format)}\n"
+        disp_str += f"Due Date: \t\t\t\t {t['due_date'].strftime(datetime_string_format)}\n"
+        disp_str += f"Task Description: \n {t['description']}\n"
+        print(disp_str)
+        print("""-----------------------------------------------------------------------------------""")
+
+
+# -------------------------------------------------------------------#
+
+
+def view_mine(task_list, curr_user, datetime_string_format):
+    '''Allow a user to select a specific task to be assigned to them by entering a number,
+               or press -1 to return to the main menu.
+            '''
+    print("Tasks Assigned to You:")
+    assigned_tasks = [t for t in task_list if t['username'] == curr_user]
+    if not assigned_tasks:
+        print("No tasks assigned to you.")
+    else:
+        for i, task in enumerate(assigned_tasks):
+            print(f"{i + 1}. {task['title']}")
+
+        while True:
+            task_choice = input(
+                "Enter the number of the task you want to select, or press -1 to return to the main menu: ")
+            if task_choice == '-1':
+                break
+            elif task_choice.isdigit():
+                task_index = int(task_choice) - 1
+                if 0 <= task_index < len(assigned_tasks):
+                    selected_task = assigned_tasks[task_index]
+                    print(f"Task '{selected_task['title']}' selected.")
+
+                # here I add options for the selected task
+                print("Options:")
+                print("1. Mark as Complete")
+                print("2. Edit Task")
+                print("3. Return to Main Menu")
+
+                option = input("Enter your choice: ")
+                if option == '1':
+                    confirm = input("Are you sure you want to mark this task as complete? (y/n): ")
+                    if confirm.lower() == 'y':
+                        selected_task['completed'] = True
+                        print("Task marked as complete.")
+                    else:
+                        print("Task not marked as complete.")
+
+                elif option == '2':
+                    # Check if the task has been completed
+                    if selected_task['completed']:
+                        print("This task has already been completed and cannot be edited.")
+                    else:
+                        print("Editing task...")
+                        # Prompt the user to choose what to edit
+                        print("Options:")
+                        print("1. Edit assigned username")
+                        print("2. Edit due date")
+                        edit_option = input("Enter your choice: ")
+
+                        if edit_option == '1':
+                            # Edit username
+                            new_username = input("Enter the new username: ")
+                            selected_task['username'] = new_username
+                            print("Username updated successfully.")
+
+                        elif edit_option == '2':
+                            # Addidng due date to tasks
+                            while True:
+                                try:
+                                    new_due_date = input("Enter the new due date (YYYY-MM-DD): ")
+                                    due_date_time = datetime.strptime(new_due_date, datetime_string_format)
+                                    selected_task['due_date'] = due_date_time
+                                    print("Due date updated successfully.")
+                                    break
+                                except ValueError:
+                                    print("Invalid datetime format. Please use the format specified.")
+                        else:
+                            print("Invalid option. Returning to main menu.")
+                            continue
+
+                    # Update tasks.txt with the modified task information
+                    with open("tasks.txt", "w") as task_file:
+                        task_list_to_write = []
+                        for t in task_list:
+                            str_attrs = [
+                                t['username'],
+                                t['title'],
+                                t['description'],
+                                t['due_date'].strftime(datetime_string_format),
+                                t['assigned_date'].strftime(datetime_string_format),
+                                "Yes" if t['completed'] else "No"
+                            ]
+                            task_list_to_write.append(";".join(str_attrs))
+                        task_file.write("\n".join(task_list_to_write))
+
+                elif option == '3':
+                    print("Returning to Main Menu.")
+                    break
+                else:
+                    print("Invalid task number. Please try again.")
+            else:
+                print("Invalid input. Please enter a number or -1.")
